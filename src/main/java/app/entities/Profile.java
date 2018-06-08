@@ -3,6 +3,9 @@ package app.entities;
 import java.util.HashMap;
 import java.util.InputMismatchException;
 import javax.mail.MessagingException;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 import app.singletons.Email;
 import database.DatabaseController;
 
@@ -17,32 +20,32 @@ public class Profile {
 		this.dbController = db;
 	}
 	
-	public void addEmail(String email) throws MessagingException {
+	public void addEmail(String email) throws MessagingException, JsonProcessingException {
 		user.addEmail(email);
 		emailJob.sendEmail(Email.CONFIRMATION_EMAIL);
 		dbController.addEmail(user, email);
 	}
 	
-	public void removeEmail(int key) {
+	public void removeEmail(int key) throws JsonProcessingException {
 		user.removeEmail(key);
 		dbController.removeEmail(user, key);
 	}
 	
-	public void changeToAuthor() {
+	public void changeToAuthor() throws JsonProcessingException {
 		user = (User) dbController.changeToAuthor(user).toEntity();
 	}
 	
-	public void addInstitution(Institution institution) {
+	public void addInstitution(Institution institution) throws JsonProcessingException {
 		user.addInstitution(institution);
 		dbController.addInstitutionToUser(user, institution);
 	}
 	
-	public void removeInstitution(int key) {
+	public void removeInstitution(int key) throws JsonProcessingException {
 		user.removeInstitution(key);
 		dbController.removeInstitutionFromUser(user, key);
 	}
 	
-	public void changePassword(String newPassword, String passwordConfirmation) throws InputMismatchException, MessagingException {
+	public void changePassword(String newPassword, String passwordConfirmation) throws InputMismatchException, MessagingException, JsonProcessingException {
 		
 		if(newPassword.equals(passwordConfirmation)) {
 			user.setPassword(newPassword);
@@ -65,7 +68,7 @@ public class Profile {
 		dbController.removeAccount(user);
 	}
 	
-	public void changeName(String name) {
+	public void changeName(String name) throws JsonProcessingException {
 		user.setName(name);
 		dbController.changeName(user, name);
 	}

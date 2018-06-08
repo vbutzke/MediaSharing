@@ -25,15 +25,15 @@ public class MediaSharingController {
 		return dashboard.accessProfile();
 	}
 	
-	public void changePassword(String newPassword, String confirmation) throws InputMismatchException, MessagingException {
+	public void changePassword(String newPassword, String confirmation) throws InputMismatchException, MessagingException, JsonProcessingException {
 		dashboard.accessProfile().changePassword(newPassword, confirmation);
 	}
 	
-	public void addEmail(String email) throws MessagingException {
+	public void addEmail(String email) throws MessagingException, JsonProcessingException {
 		dashboard.accessProfile().addEmail(email);
 	}
 	
-	public void removeEmail(int key) {
+	public void removeEmail(int key) throws JsonProcessingException {
 		dashboard.accessProfile().removeEmail(key);
 	}
 	

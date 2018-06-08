@@ -3,6 +3,8 @@ package database;
 import java.io.IOException;
 import java.util.LinkedList;
 import org.bson.Document;
+import org.bson.conversions.Bson;
+
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -11,6 +13,7 @@ import com.mongodb.client.FindIterable;
 import com.mongodb.client.model.Filters;
 import app.entities.*;
 import app.singletons.MediaCollectionType;
+import app.singletons.UserType;
 import database.daos.*;
 import database.dtos.*;
 
@@ -46,38 +49,40 @@ public class DatabaseController {
 		return mapper.readValue(document.toJson(), UserDTO.class);
 	}
 	
-	public void addEmail(User user, String email) {
-		
-		
+	public void addEmail(User user, String email) throws JsonProcessingException {
+		user.addEmail(email);
+		updateUser(user);
 	}
 	
-	public void removeEmail(User user, int id) {
-		
-		
+	public void removeEmail(User user, int id) throws JsonProcessingException {
+		user.removeEmail(id);
+		updateUser(user);
 	}
 	
-	public void addInstitutionToUser(User user, Institution institution) {
-		
-		
+	public void addInstitutionToUser(User user, Institution institution) throws JsonProcessingException {
+		user.addInstitution(institution);
+		updateUser(user);
 	}
 	
-	public void removeInstitutionFromUser(User user, int id) {
-		
-		
+	public void removeInstitutionFromUser(User user, int id) throws JsonProcessingException {
+		user.removeInstitution(id);
+		updateUser(user);
 	}
 	
-	public void changePassword(User user, String password) {
-		
-		
+	public void changePassword(User user, String password) throws JsonProcessingException {
+		user.setPassword(password);
+		updateUser(user);
 	}
 	
-	public void changeName(User user, String name) {
-		
-		
+	public void changeName(User user, String name) throws JsonProcessingException {
+		user.setName(name);
+		updateUser(user);
 	}
 	
-	public UserDTO changeToAuthor(User user) {
-		
+	public UserDTO changeToAuthor(User user) throws JsonProcessingException {
+		user.setUserType(UserType.AUTHOR);
+		updateUser(user);
+		return (UserDTO) user.convertToDTO();
 	}
 
 	public MediasDTO getFavorites(String email) throws JsonParseException, JsonMappingException, IOException {
@@ -100,21 +105,11 @@ public class DatabaseController {
 	}
 	
 	public MediasDTO updateFavorites(User user, Medias favorites) throws JsonProcessingException {
-		dao = new UserDAO();
-		dto = (UserDTO) user.convertToDTO();
-		Document document = dao.findOne(Filters.eq("email", (((UserDTO) dto).getEmail())));
-		((UserDTO) dto).setFavorites((MediasDTO) favorites.convertToDTO());
-		dao.updateDocument(document, new Document("$set", dao.createDocument(dto)));
-		return (MediasDTO) dto;
+		return updateUserMedias(user, favorites, Filters.eq("email", (((UserDTO) dto).getEmail())));
 	}
 	
 	public MediasDTO updateMyMedias(User user, Medias myMedias) throws JsonProcessingException {
-		dao = new UserDAO();
-		dto = (UserDTO) user.convertToDTO();
-		Document document = dao.findOne(Filters.eq("email", (((UserDTO) dto).getEmail())));
-		((UserDTO) dto).setMedias((MediasDTO) myMedias.convertToDTO());
-		dao.updateDocument(document, new Document("$set", dao.createDocument(dto)));
-		return (MediasDTO) dto;
+		return updateUserMedias(user, myMedias, Filters.eq("email", (((UserDTO) dto).getEmail())));
 	}
 	
 	public MediasDTO updateAllMedias(Medias allMedias) throws JsonProcessingException {
@@ -194,4 +189,19 @@ public class DatabaseController {
 		return highest;
 	}
 	
+	private void updateUser(User user) throws JsonProcessingException {
+		dao = new UserDAO();
+		dto = user.convertToDTO();
+		Document document = dao.findOne(Filters.eq("email", (((UserDTO) dto).getEmail())));
+		dao.updateDocument(document, new Document("$set", dao.createDocument(dto)));
+	}
+	
+	private MediasDTO updateUserMedias(User user, Medias medias, Bson filters) throws JsonProcessingException {
+		dao = new UserDAO();
+		dto = (UserDTO) user.convertToDTO();
+		Document document = dao.findOne(filters);
+		((UserDTO) dto).setFavorites((MediasDTO) medias.convertToDTO());
+		dao.updateDocument(document, new Document("$set", dao.createDocument(dto)));
+		return (MediasDTO) dto;
+	}
 }

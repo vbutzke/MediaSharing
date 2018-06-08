@@ -138,6 +138,8 @@ public class AppController {
 				response = sendError(response, HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
 			} catch(MessagingException m) {
 				response = sendError(response, HttpServletResponse.SC_BAD_REQUEST, Exceptions.EMAIL_SERVICE_ERROR+"\n "+m.getMessage());
+			} catch (JsonProcessingException e) {
+				response = sendError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
 			}
 			
 		} else {
@@ -152,6 +154,8 @@ public class AppController {
 				mediaSharingController.addEmail(email);
 			} catch (MessagingException e) {
 				response = sendError(response, HttpServletResponse.SC_BAD_REQUEST, Exceptions.EMAIL_SERVICE_ERROR+"\n "+e.getMessage());
+			} catch (JsonProcessingException e) {
+				response = sendError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
 			}
 			response.setStatus( HttpServletResponse.SC_OK  );
 		} else {
@@ -162,7 +166,11 @@ public class AppController {
 	@RequestMapping("/removeEmail") //
 	public void removeEmail(@RequestParam(value="emailId") int id, HttpServletResponse response) {
 		if(isLoggedIn) {
-			mediaSharingController.removeEmail(id);
+			try {
+				mediaSharingController.removeEmail(id);
+			} catch (JsonProcessingException e) {
+				response = sendError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+			}
 			response.setStatus( HttpServletResponse.SC_OK  );
 		} else {
 			response.setStatus( HttpServletResponse.SC_UNAUTHORIZED );
