@@ -1,9 +1,15 @@
 package app.controllers;
 
+import java.io.IOException;
 import java.security.InvalidParameterException;
 import javax.mail.MessagingException;
 import javax.security.auth.login.LoginException;
 import org.springframework.stereotype.Controller;
+
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+
 import app.entities.Academic;
 import app.entities.Administrator;
 import app.entities.Dashboard;
@@ -12,17 +18,21 @@ import app.entities.Institution;
 import app.entities.User;
 import app.singletons.Email;
 import app.singletons.Exceptions;
+import database.DatabaseController;
+import database.dtos.InstitutionDTO;
 
 @Controller
 public class AuthenticationController {
 	
 	private EmailJob emailJob;
+	private DatabaseController db;
 	
 	public AuthenticationController() {
 		emailJob = new EmailJob();
+		db = new DatabaseController();
 	}
 	
-	public Dashboard login(String email, String password) throws LoginException {
+	public Dashboard login(String email, String password) throws LoginException, JsonParseException, JsonMappingException, IOException {
 		
 		boolean isEmailValid 	= false;
 		boolean isPasswordValid = false;
@@ -41,7 +51,7 @@ public class AuthenticationController {
 		
 	}
 	
-	public void createUser(String name, String lastName, String email, String password, String confirmation, String accessCode) throws InvalidParameterException{
+	public void createUser(String name, String lastName, String email, String password, String confirmation, String accessCode) throws InvalidParameterException, JsonParseException, JsonMappingException, JsonProcessingException, IOException{
 		
 		if(isInformationFilled(name, lastName, email, password, confirmation, accessCode)) {
 			String status = isInformationValid(email, password, confirmation);
@@ -51,10 +61,10 @@ public class AuthenticationController {
 				
 				if(isAdministrator(accessCode)) {
 					Administrator admin = new Administrator(user);
-					//grava as coisas no banco
+					db.addAccount(admin);
 				} else {
 					Academic academic = new Academic(user);
-					//grava as coisas no banco
+					db.addAccount(academic);
 				}
 				
 			} else {
@@ -72,7 +82,8 @@ public class AuthenticationController {
 	}
 	
 	public void logout() {
-		
+		emailJob = null;
+		db = null;
 	}
 	
 	private boolean isInformationFilled(String name, String lastName, String email, String password, String confirmation, String accessCode) {
@@ -127,14 +138,14 @@ public class AuthenticationController {
 		return false;
 	}
 	
-	private boolean isAccessCodeValid(String accessCode) {
-		//check on record
-		
+	private boolean isAccessCodeValid(String accessCode) throws JsonParseException, JsonMappingException, JsonProcessingException, IOException {
+		if(db.isCodeValid(accessCode)) {
+			return true;
+		}
 		return false;
 	}
 	
-	private boolean isAdministrator(String accessCode) throws InvalidParameterException{
-		//need to persist access codes
+	private boolean isAdministrator(String accessCode) throws InvalidParameterException, JsonParseException, JsonMappingException, JsonProcessingException, IOException{
 		if(isInformationFilled(accessCode)) {
 			if(isAccessCodeValid(accessCode)) {
 				return true;
@@ -144,13 +155,10 @@ public class AuthenticationController {
 		}
 		
 		return false;
-		
 	}
 	
-	private Institution getInstitution(String emailProvider) {
-		
-		Institution i;
-		return i;
-		
+	private Institution getInstitution(String emailProvider) throws JsonParseException, JsonMappingException, IOException {
+		InstitutionDTO dto = db.getInstitution(emailProvider);
+		return new Institution(dto.getName(), dto.getCNPJ(), dto.getEmailProvider());
 	}
 }

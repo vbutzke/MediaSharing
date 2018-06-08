@@ -1,26 +1,34 @@
 package app.entities;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import app.singletons.MediaCollectionType;
 import app.singletons.MediaType;
-import database.DatabaseBoundary;
+import database.DatabaseController;
 
 public class Dashboard {
-
+//have to actually persist everything later, remember, you have to call DatabaseController for that
 	private Profile profile;
-	private MyMedias myMedias;
-	private Favorites favorites;
-	private AllMedias allMedias;
-	private DatabaseBoundary db;
-	private LinkedList<Author> author;
+	private Medias myMedias;
+	private Medias favorites;
+	private Medias allMedias;
+	private DatabaseController db;
+	private LinkedList<Author> author; //?
 	
-	public Dashboard(String email) {
-		this.db 	   = new DatabaseBoundary();
-		this.profile   = new Profile(db.getUser(email), db);
-		this.myMedias  = db.getMyMedias(email);
-		this.favorites = db.getFavorites(email);
-		this.allMedias = db.getAllMedias();	
-		this.author.add((Author)profile.getUser());
+	public Dashboard(String email) throws JsonParseException, JsonMappingException, IOException {
+		this.db 	   = new DatabaseController();
+		this.profile   = new Profile((User) db.getUser(email).toEntity(), db);
+		this.myMedias  = (Medias) db.getMyMedias(email).toEntity();
+		this.favorites = (Medias) db.getFavorites(email).toEntity();
+		this.allMedias = (Medias) db.getAllMedias().toEntity();
+		this.author.add((Author) profile.getUser()); //?
+		this.myMedias.setCollectionType(MediaCollectionType.MY_MIDIAS);
+		this.favorites.setCollectionType(MediaCollectionType.FAVORITES);
+		this.allMedias.setCollectionType(MediaCollectionType.ALL_MEDIAS);
 	}
 	
 	public HashMap<Integer, Media> searchMedia(String name, String description, LinkedList<Author> authors, MediaType mediaType) {
@@ -31,21 +39,21 @@ public class Dashboard {
 		return profile;
 	}
 	
-	public MyMedias accessMyMedias() {
+	public Medias accessMyMedias() {
 		myMedias.setMedias(allMedias.searchMedia("", "", author, null));
 		return myMedias;
 	}
 	
-	public Favorites accessFavorites() {
+	public Medias accessFavorites() throws JsonProcessingException {
 		updateFavorites(favorites);
 		return favorites;
 	}
 	
-	private void updateFavorites(Favorites favorites) {
-		favorites = db.updateFavorites(favorites);
+	private void updateFavorites(Medias favorites) throws JsonProcessingException {
+		favorites = (Medias) (db.updateFavorites(profile.getUser(), favorites)).toEntity();
 	}
 	
-	public AllMedias accessAllMedias() {
+	public Medias accessAllMedias() {
 		return allMedias;
 	}
 	
@@ -64,12 +72,16 @@ public class Dashboard {
 		myMedias.setMedias(allMedias.searchMedia("", "", author, null));
 	}
 	
-	public void addInstitution(Institution institution) {
+	public void addInstitution(Institution institution) throws JsonProcessingException {
 		db.addInstitution(institution);
 	}
 	
 	public void deleteInstitution(int id) {
 		db.deleteInstitution(id);
+	}
+	
+	public void addAccessCode(String code) throws IOException {
+		db.addAccessCode(code);
 	}
 	
 }

@@ -2,16 +2,18 @@ package database.dtos;
 
 import java.util.HashMap;
 
+import app.entities.AbstractEntity;
 import app.entities.Institution;
+import app.entities.User;
 
-public class UserDTO {
+public class UserDTO extends AbstractDTO {
 
 	private String name;
 	private HashMap<Integer, String> email;
 	private String password;
 	private HashMap<Integer, Institution> institution;
-	private MediasDTO medias; //ponteiro
-	private MediasDTO favorites; //
+	private MediasDTO medias;
+	private MediasDTO favorites;
 
     public UserDTO(String name, HashMap<Integer, String> email, String password, HashMap<Integer, Institution> institution){
     	this.name 		 = name;
@@ -66,6 +68,11 @@ public class UserDTO {
 
 	public void setFavorites(MediasDTO favorites) {
 		this.favorites = favorites;
+	}
+	
+	@Override
+	public AbstractEntity toEntity() {
+		return new User(name, email, name, institution);
 	}
 	
 }

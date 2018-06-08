@@ -3,21 +3,22 @@ package app.singletons;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map.Entry;
-import app.entities.AllMedias;
 import app.entities.Author;
 import app.entities.Media;
+import app.entities.Medias;
 
 public enum SearchEngine {
 	
 	INSTANCE;
 	
-	private AllMedias medias;
+	private Medias medias;
 	
 	private SearchEngine() {
 	}
 	
 	private void setMedias(HashMap<Integer, Media> medias) {
-		this.medias.setMedias(medias);;
+		this.medias.setMedias(medias);
+		this.medias.setCollectionType(MediaCollectionType.ALL_MEDIAS);
 	}
 	
 	public HashMap<Integer, Media> search(String name, String description, LinkedList<Author> authors, MediaType mediaType, HashMap<Integer, Media> mediasSet) {

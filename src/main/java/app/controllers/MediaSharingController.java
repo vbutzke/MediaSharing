@@ -1,23 +1,14 @@
 package app.controllers;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.InputMismatchException;
 import java.util.LinkedList;
 import javax.mail.MessagingException;
 import org.springframework.stereotype.Controller;
-import app.entities.Administrator;
-import app.entities.AllMedias;
-import app.entities.Author;
-import app.entities.Dashboard;
-import app.entities.Favorites;
-import app.entities.Institution;
-import app.entities.Media;
-import app.entities.MyMedias;
-import app.entities.Profile;
-import app.entities.User;
-import app.singletons.Exceptions;
-import app.singletons.MediaType;
-import app.singletons.UserType;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import app.entities.*;
+import app.singletons.*;
 
 @Controller
 public class MediaSharingController {
@@ -50,13 +41,14 @@ public class MediaSharingController {
 		dashboard.accessProfile().removeAccount();
 	}
 	
-	public String generateAccessCode() throws SecurityException {
+	public String generateAccessCode() throws SecurityException, IOException {
 		User user = dashboard.accessProfile().getUser();
 		String accessCode = "";
 		
 		if(user.getUserType() == UserType.ADMINISTRATOR) {
 			Administrator admin = (Administrator)user;
 			accessCode = admin.generateAccessCode();
+			dashboard.addAccessCode(accessCode);
 		} else {
 			throw new SecurityException(Exceptions.ACCESS_CODE_TRIGGERING_VIOLATION.getMessage());
 		}
@@ -88,7 +80,7 @@ public class MediaSharingController {
 		dashboard.addMedia(media);
 	}
 	
-	public MyMedias accessMyMedia() {
+	public Medias accessMyMedia() {
 		return dashboard.accessMyMedias();
 	}
 	
@@ -96,11 +88,11 @@ public class MediaSharingController {
 		return dashboard.accessMyMedias().searchMedia(name, description, authors, type);
 	}
 	
-	public Favorites accessFavorites() {
+	public Medias accessFavorites() throws JsonProcessingException {
 		return dashboard.accessFavorites();
 	}
 	
-	public HashMap<Integer, Media> searchOnFavorites(String name, String description, LinkedList<Author> authors, MediaType type) {
+	public HashMap<Integer, Media> searchOnFavorites(String name, String description, LinkedList<Author> authors, MediaType type) throws JsonProcessingException {
 		 return dashboard.accessFavorites().searchMedia(name, description, authors, type);
 	}
 	
@@ -112,11 +104,11 @@ public class MediaSharingController {
 		dashboard.removeMedia(key);
 	}
 	
-	public void addToFavorites(Media media) {
+	public void addToFavorites(Media media) throws JsonProcessingException {
 		dashboard.accessFavorites().addMedia(media);
 	}
 	
-	public void removeFromFavorites(int key) {
+	public void removeFromFavorites(int key) throws JsonProcessingException {
 		dashboard.accessFavorites().removeMedia(key);
 	}
 	
@@ -124,11 +116,11 @@ public class MediaSharingController {
 		dashboard.editMedia(key, media);
 	}
 	
-	public AllMedias accessAllMedias() {
+	public Medias accessAllMedias() {
 		return dashboard.accessAllMedias();
 	}
 	
-	public void createInstitution(Institution institution) {
+	public void createInstitution(Institution institution) throws JsonProcessingException {
 		dashboard.addInstitution(institution);
 	}
 	
@@ -137,7 +129,9 @@ public class MediaSharingController {
 	}
 	
 	public void logout() {
+		dashboard = null;
 		auth.logout();
+		auth = null;
 	}
 	
 }

@@ -4,40 +4,45 @@ import java.util.HashMap;
 import java.util.InputMismatchException;
 import javax.mail.MessagingException;
 import app.singletons.Email;
-import database.DatabaseBoundary;
+import database.DatabaseController;
 
 public class Profile {
 	
 	private User user;
 	private EmailJob emailJob;
-	private DatabaseBoundary dbBoundary;
+	private DatabaseController dbController;
 	
-	public Profile(User user, DatabaseBoundary db) {
+	public Profile(User user, DatabaseController db) {
 		this.user 		= user;
-		this.dbBoundary = db;
+		this.dbController = db;
 	}
 	
 	public void addEmail(String email) throws MessagingException {
 		user.addEmail(email);
 		emailJob.sendEmail(Email.CONFIRMATION_EMAIL);
+		dbController.addEmail(user, email);
 	}
 	
 	public void removeEmail(int key) {
 		user.removeEmail(key);
+		dbController.removeEmail(user, key);
 	}
 	
 	public void addInstitution(Institution institution) {
 		user.addInstitution(institution);
+		dbController.addInstitutionToUser(user, institution);
 	}
 	
 	public void removeInstitution(int key) {
 		user.removeInstitution(key);
+		dbController.removeInstitutionFromUser(user, key);
 	}
 	
 	public void changePassword(String newPassword, String passwordConfirmation) throws InputMismatchException, MessagingException {
 		
 		if(newPassword.equals(passwordConfirmation)) {
 			user.setPassword(newPassword);
+			dbController.changePassword(user, newPassword);
 			HashMap<Integer, String> emails = user.getEmail();
 			
 			for(int i=0; i<emails.size(); i++) {
@@ -53,11 +58,12 @@ public class Profile {
 	}
 	
 	public void removeAccount() {
-		dbBoundary.removeAccount();
+		dbController.removeAccount(user);
 	}
 	
 	public void changeName(String name) {
 		user.setName(name);
+		dbController.changeName(user, name);
 	}
 
 	public User getUser() {

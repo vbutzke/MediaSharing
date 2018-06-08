@@ -1,7 +1,10 @@
 package database.dtos;
 
-public class InstitutionDTO {
+import app.entities.AbstractEntity;
+import app.entities.Institution;
 
+public class InstitutionDTO extends AbstractDTO {
+	
 	private String name;
 	private String CNPJ;
 	private String emailProvider;
@@ -34,6 +37,11 @@ public class InstitutionDTO {
 
 	public void setEmailProvider(String emailProvider) {
 		this.emailProvider = emailProvider;
+	}
+	
+	@Override
+	public AbstractEntity toEntity() {
+		return new Institution(name, CNPJ, emailProvider);
 	}
 	
 }

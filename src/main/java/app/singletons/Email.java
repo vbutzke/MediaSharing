@@ -5,10 +5,11 @@ public enum Email {
 	RESET_PASSWORD_EMAIL("", "", "Password Reset", "Hello, "
 												+ "\n Have you forgotten your password? No problem! :) "
 												+ "\n Just click on the link below and define a new password for your account. "
+												+ "\n <a href=\"/http://www.uselessweb.com/\"> Click here do redefine your password. </a>"
 												+ "\n If it was not you, please just ignore this email."), 
 	CONFIRMATION_EMAIL("", "", "Email added!", "Hello, "
 												+ "\n This email has been added to your universitary sharing media account. :)");
-//link
+
     private String from;
     private String to;
     private String subject;

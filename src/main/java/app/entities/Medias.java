@@ -3,16 +3,28 @@ package app.entities;
 import java.util.HashMap;
 import java.util.LinkedList;
 
+import app.singletons.MediaCollectionType;
 import app.singletons.MediaType;
 import app.singletons.SearchEngine;
+import database.dtos.AbstractDTO;
+import database.dtos.MediasDTO;
 
-public abstract class Medias {
+public class Medias extends AbstractEntity {
 	
 	private HashMap<Integer, Media> medias;
+	private MediaCollectionType type;
 	private int lastKey;
 	
 	public Medias() {
 		
+	}
+	
+	public MediaCollectionType getCollectionType() {
+		return type;
+	}
+	
+	public void setCollectionType(MediaCollectionType type) {
+		this.type = type;
 	}
 	
 	public void addMedia(Media media) {
@@ -52,6 +64,13 @@ public abstract class Medias {
 	
 	public void setMedia(int key, Media media) {
 		medias.put(key, media);
+	}
+	
+	@Override
+	public AbstractDTO convertToDTO() {
+		MediasDTO dto = new MediasDTO();
+		dto.setMedias(getMedias());
+		return dto;
 	}
 	
 }
