@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.model.Filters;
 import app.entities.*;
+import app.singletons.MediaCollectionType;
 import database.daos.*;
 import database.dtos.*;
 
@@ -74,6 +75,10 @@ public class DatabaseController {
 		
 		
 	}
+	
+	public UserDTO changeToAuthor(User user) {
+		
+	}
 
 	public MediasDTO getFavorites(String email) throws JsonParseException, JsonMappingException, IOException {
 		return ((UserDTO)getUser(email)).getFavorites();
@@ -99,6 +104,24 @@ public class DatabaseController {
 		dto = (UserDTO) user.convertToDTO();
 		Document document = dao.findOne(Filters.eq("email", (((UserDTO) dto).getEmail())));
 		((UserDTO) dto).setFavorites((MediasDTO) favorites.convertToDTO());
+		dao.updateDocument(document, new Document("$set", dao.createDocument(dto)));
+		return (MediasDTO) dto;
+	}
+	
+	public MediasDTO updateMyMedias(User user, Medias myMedias) throws JsonProcessingException {
+		dao = new UserDAO();
+		dto = (UserDTO) user.convertToDTO();
+		Document document = dao.findOne(Filters.eq("email", (((UserDTO) dto).getEmail())));
+		((UserDTO) dto).setMedias((MediasDTO) myMedias.convertToDTO());
+		dao.updateDocument(document, new Document("$set", dao.createDocument(dto)));
+		return (MediasDTO) dto;
+	}
+	
+	public MediasDTO updateAllMedias(Medias allMedias) throws JsonProcessingException {
+		dao = new MediasDAO();
+		dto = (MediasDTO) allMedias.convertToDTO();
+		Document document = dao.findOne(Filters.eq("type", MediaCollectionType.ALL_MEDIAS));
+		((MediasDTO) dto).setMedias(allMedias.getMedias());
 		dao.updateDocument(document, new Document("$set", dao.createDocument(dto)));
 		return (MediasDTO) dto;
 	}

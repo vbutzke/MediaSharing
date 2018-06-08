@@ -11,7 +11,7 @@ import app.singletons.MediaType;
 import database.DatabaseController;
 
 public class Dashboard {
-//have to actually persist everything later, remember, you have to call DatabaseController for that
+	
 	private Profile profile;
 	private Medias myMedias;
 	private Medias favorites;
@@ -25,7 +25,6 @@ public class Dashboard {
 		this.myMedias  = (Medias) db.getMyMedias(email).toEntity();
 		this.favorites = (Medias) db.getFavorites(email).toEntity();
 		this.allMedias = (Medias) db.getAllMedias().toEntity();
-		this.author.add((Author) profile.getUser()); //?
 		this.myMedias.setCollectionType(MediaCollectionType.MY_MIDIAS);
 		this.favorites.setCollectionType(MediaCollectionType.FAVORITES);
 		this.allMedias.setCollectionType(MediaCollectionType.ALL_MEDIAS);
@@ -39,37 +38,57 @@ public class Dashboard {
 		return profile;
 	}
 	
-	public Medias accessMyMedias() {
-		myMedias.setMedias(allMedias.searchMedia("", "", author, null));
+	public Medias accessMyMedias() throws IOException {
+		updateMyMedias();
 		return myMedias;
 	}
 	
-	public Medias accessFavorites() throws JsonProcessingException {
-		updateFavorites(favorites);
+	public Medias accessFavorites() throws IOException {
+		updateFavorites();
 		return favorites;
 	}
 	
-	private void updateFavorites(Medias favorites) throws JsonProcessingException {
-		favorites = (Medias) (db.updateFavorites(profile.getUser(), favorites)).toEntity();
-	}
-	
-	public Medias accessAllMedias() {
+	public Medias accessAllMedias() throws IOException {
+		updateMedias();
 		return allMedias;
 	}
 	
-	public void addMedia(Media media) {
+	private void updateFavorites() throws IOException {
+		favorites = (Medias) db.getFavorites(profile.getUser().getEmail().get(1)).toEntity();
+	}
+	
+	private void updateMyMedias() throws IOException {
+		favorites = (Medias) db.getMyMedias(profile.getUser().getEmail().get(1)).toEntity();
+	}
+	
+	private void updateMedias() throws IOException {
+		favorites = (Medias) db.getAllMedias().toEntity();
+	}
+		
+	public void addMedia(Media media) throws JsonProcessingException {
+		if(author.isEmpty()) {
+			Author a = new Author(profile.getUser(), media);
+			profile.changeToAuthor();
+			author.add(a);
+		}
 		allMedias.addMedia(media);
+		db.updateAllMedias(allMedias);
 		myMedias.setMedias(allMedias.searchMedia("", "", author, null));
+		db.updateMyMedias(profile.getUser(), myMedias);
 	}
 	
-	public void removeMedia(int key) {
+	public void removeMedia(int key) throws JsonProcessingException {
 		allMedias.removeMedia(key);
+		db.updateAllMedias(allMedias);
 		myMedias.setMedias(allMedias.searchMedia("", "", author, null));
+		db.updateMyMedias(profile.getUser(), myMedias);
 	}
 	
-	public void editMedia(int key, Media media) {
+	public void editMedia(int key, Media media) throws JsonProcessingException {
 		allMedias.setMedia(key, media);
+		db.updateAllMedias(allMedias);
 		myMedias.setMedias(allMedias.searchMedia("", "", author, null));
+		db.updateMyMedias(profile.getUser(), myMedias);
 	}
 	
 	public void addInstitution(Institution institution) throws JsonProcessingException {

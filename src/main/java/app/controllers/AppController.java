@@ -245,7 +245,12 @@ public class AppController {
 	
 	@RequestMapping("/searchAll")
 	public String searchAll(@RequestParam("name") String name, @RequestParam("description") String description, @RequestParam("authors") LinkedList<Author> authors, @RequestParam("mediaType") MediaType mediaType, HttpServletResponse response) {
-		return getJSON(mediaSharingController.searchInAllMedias(name, description, authors, mediaType), response);
+		try {
+			return getJSON(mediaSharingController.searchInAllMedias(name, description, authors, mediaType), response);
+		} catch (IOException e) {
+			response = sendError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+		}
+		return "";
 	}
 	
 	@RequestMapping("/addMedia")
@@ -277,12 +282,23 @@ public class AppController {
 	
 	@RequestMapping("/myMedias")
 	public String accessMyMedias(HttpServletResponse response) {
-		return getJSON(mediaSharingController.accessMyMedia(), response);
+		try {
+			return getJSON(mediaSharingController.accessMyMedia(), response);
+		} catch (IOException e) {
+			response = sendError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+		}
+		
+		return "";
 	}
 	
 	@RequestMapping("/searchMyMedias")
 	public String searchMyMedias(@RequestParam("name") String name, @RequestParam("description") String description, @RequestParam("authors") LinkedList<Author> authors, @RequestParam("mediaType") MediaType mediaType, HttpServletResponse response) {
-		return getJSON(mediaSharingController.searchOnMyMedias(name, description, authors, mediaType), response);
+		try {
+			return getJSON(mediaSharingController.searchOnMyMedias(name, description, authors, mediaType), response);
+		} catch (IOException e) {
+			response = sendError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+		}
+		return "";
 	}
 	
 	@RequestMapping("/favorites")
@@ -290,6 +306,8 @@ public class AppController {
 		try {
 			return getJSON(mediaSharingController.accessFavorites(), response);
 		} catch (JsonProcessingException e) {
+			response = sendError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+		} catch (IOException e) {
 			response = sendError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
 		}
 		return "";
@@ -301,6 +319,8 @@ public class AppController {
 			return getJSON(mediaSharingController.searchOnFavorites(name, description, authors, mediaType), response);
 		} catch (JsonProcessingException e) {
 			response = sendError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+		} catch (IOException e) {
+			response = sendError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
 		}
 		
 		return "";
@@ -308,7 +328,12 @@ public class AppController {
 	
 	@RequestMapping("/getMediaInfo")
 	public String clickOnMedia(@RequestParam(value="mediaId") int id, HttpServletResponse response) {
-		return getJSON(mediaSharingController.clickOnMedia(id), response);
+		try {
+			return getJSON(mediaSharingController.clickOnMedia(id), response);
+		} catch (IOException e) {
+			response = sendError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+		}
+		return "";
 	}
 	
 	@RequestMapping("/deleteMedia")
@@ -317,11 +342,19 @@ public class AppController {
 		if(isLoggedIn) {
 			User user = mediaSharingController.accessProfile().getUser();
 
-			if(user.getUserType().equals(UserType.ADMINISTRATOR) || mediaSharingController.accessAllMedias().getMedia(id).getAuthors().contains(user)){
-				mediaSharingController.accessAllMedias().removeMedia(id);
-				response.setStatus( HttpServletResponse.SC_OK );
-			} else {
-				response = sendError(response, HttpServletResponse.SC_UNAUTHORIZED, Exceptions.PERMISSION_DENIED.getMessage());
+			try {
+				if(user.getUserType().equals(UserType.ADMINISTRATOR) || mediaSharingController.accessAllMedias().getMedia(id).getAuthors().contains(user)){
+					try {
+						mediaSharingController.accessAllMedias().removeMedia(id);
+					} catch (IOException e) {
+						response = sendError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+					}
+					response.setStatus( HttpServletResponse.SC_OK );
+				} else {
+					response = sendError(response, HttpServletResponse.SC_UNAUTHORIZED, Exceptions.PERMISSION_DENIED.getMessage());
+				}
+			} catch (IOException e) {
+				response = sendError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
 			}
 		} else {
 			response.setStatus( HttpServletResponse.SC_UNAUTHORIZED );
@@ -334,8 +367,8 @@ public class AppController {
 		if(isLoggedIn) {
 			try {
 				mediaSharingController.accessFavorites().addMedia(mediaSharingController.accessAllMedias().getMedia(id));
-			} catch (JsonProcessingException e) {
-				response = sendError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());;
+			} catch (IOException e) {
+				response = sendError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
 			}
 			response.setStatus( HttpServletResponse.SC_OK );
 		} else {
@@ -350,6 +383,8 @@ public class AppController {
 				mediaSharingController.accessFavorites().removeMedia(id);
 			} catch (JsonProcessingException e) {
 				response = sendError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+			} catch (IOException e) {
+				response = sendError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
 			}
 			response.setStatus( HttpServletResponse.SC_OK );
 		} else {
@@ -363,26 +398,30 @@ public class AppController {
 		if(isLoggedIn) {
 			User user = mediaSharingController.accessProfile().getUser();
 
-			if(user.getUserType().equals(UserType.ADMINISTRATOR) || mediaSharingController.accessAllMedias().getMedia(id).getAuthors().contains(user)){
-				try {
-					Media mediaObj = mapper.readValue(newMedia, Media.class);
-					mediaSharingController.editMedia(id, mediaObj);
-					response.setStatus( HttpServletResponse.SC_OK );
-				} catch (JsonParseException e) {
-					e.printStackTrace();
-					response.setStatus( HttpServletResponse.SC_INTERNAL_SERVER_ERROR  );
-					System.out.println("Error parsing JSON - accessProfile");
-				} catch (JsonMappingException e) {
-					e.printStackTrace();
-					response.setStatus( HttpServletResponse.SC_INTERNAL_SERVER_ERROR  );
-					System.out.println("Error mapping JSON - accessProfile");
-				} catch (IOException e) {
-					e.printStackTrace();
-					response.setStatus( HttpServletResponse.SC_INTERNAL_SERVER_ERROR  );
-					System.out.println("Error - accessProfile");
+			try {
+				if(user.getUserType().equals(UserType.ADMINISTRATOR) || mediaSharingController.accessAllMedias().getMedia(id).getAuthors().contains(user)){
+					try {
+						Media mediaObj = mapper.readValue(newMedia, Media.class);
+						mediaSharingController.editMedia(id, mediaObj);
+						response.setStatus( HttpServletResponse.SC_OK );
+					} catch (JsonParseException e) {
+						e.printStackTrace();
+						response.setStatus( HttpServletResponse.SC_INTERNAL_SERVER_ERROR  );
+						System.out.println("Error parsing JSON - accessProfile");
+					} catch (JsonMappingException e) {
+						e.printStackTrace();
+						response.setStatus( HttpServletResponse.SC_INTERNAL_SERVER_ERROR  );
+						System.out.println("Error mapping JSON - accessProfile");
+					} catch (IOException e) {
+						e.printStackTrace();
+						response.setStatus( HttpServletResponse.SC_INTERNAL_SERVER_ERROR  );
+						System.out.println("Error - accessProfile");
+					}
+				} else {
+					response = sendError(response, HttpServletResponse.SC_UNAUTHORIZED, Exceptions.PERMISSION_DENIED.getMessage());
 				}
-			} else {
-				response = sendError(response, HttpServletResponse.SC_UNAUTHORIZED, Exceptions.PERMISSION_DENIED.getMessage());
+			} catch (IOException e) {
+				response = sendError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
 			}
 		} else {
 			response.setStatus( HttpServletResponse.SC_UNAUTHORIZED );

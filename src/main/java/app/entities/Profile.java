@@ -28,6 +28,10 @@ public class Profile {
 		dbController.removeEmail(user, key);
 	}
 	
+	public void changeToAuthor() {
+		user = (User) dbController.changeToAuthor(user).toEntity();
+	}
+	
 	public void addInstitution(Institution institution) {
 		user.addInstitution(institution);
 		dbController.addInstitutionToUser(user, institution);

@@ -18,7 +18,7 @@ public class MediaSharingController {
 	
 	public MediaSharingController(Dashboard dashboard, AuthenticationController auth) {
 		this.dashboard = dashboard;
-		this.auth = auth;
+		this.auth 	   = auth;
 	}
 	
 	public Profile accessProfile() {
@@ -72,51 +72,51 @@ public class MediaSharingController {
 		return dashboard;
 	}
 	
-	public HashMap<Integer, Media> searchInAllMedias(String name, String description, LinkedList<Author> authors, MediaType type) {
+	public HashMap<Integer, Media> searchInAllMedias(String name, String description, LinkedList<Author> authors, MediaType type) throws IOException {
 		return dashboard.accessAllMedias().searchMedia(name, description, authors, type);
 	}
 	
-	public void addMedia(Media media) {
+	public void addMedia(Media media) throws JsonProcessingException {
 		dashboard.addMedia(media);
 	}
 	
-	public Medias accessMyMedia() {
+	public Medias accessMyMedia() throws IOException {
 		return dashboard.accessMyMedias();
 	}
 	
-	public HashMap<Integer, Media> searchOnMyMedias(String name, String description, LinkedList<Author> authors, MediaType type) {
+	public HashMap<Integer, Media> searchOnMyMedias(String name, String description, LinkedList<Author> authors, MediaType type) throws IOException {
 		return dashboard.accessMyMedias().searchMedia(name, description, authors, type);
 	}
 	
-	public Medias accessFavorites() throws JsonProcessingException {
+	public Medias accessFavorites() throws IOException {
 		return dashboard.accessFavorites();
 	}
 	
-	public HashMap<Integer, Media> searchOnFavorites(String name, String description, LinkedList<Author> authors, MediaType type) throws JsonProcessingException {
+	public HashMap<Integer, Media> searchOnFavorites(String name, String description, LinkedList<Author> authors, MediaType type) throws IOException {
 		 return dashboard.accessFavorites().searchMedia(name, description, authors, type);
 	}
 	
-	public Media clickOnMedia(int key) {
+	public Media clickOnMedia(int key) throws IOException {
 		return dashboard.accessAllMedias().getMedia(key);
 	}
 	
-	public void deleteMedia(int key) {
+	public void deleteMedia(int key) throws JsonProcessingException {
 		dashboard.removeMedia(key);
 	}
 	
-	public void addToFavorites(Media media) throws JsonProcessingException {
+	public void addToFavorites(Media media) throws IOException {
 		dashboard.accessFavorites().addMedia(media);
 	}
 	
-	public void removeFromFavorites(int key) throws JsonProcessingException {
+	public void removeFromFavorites(int key) throws IOException {
 		dashboard.accessFavorites().removeMedia(key);
 	}
 	
-	public void editMedia(int key, Media media) {
+	public void editMedia(int key, Media media) throws JsonProcessingException {
 		dashboard.editMedia(key, media);
 	}
 	
-	public Medias accessAllMedias() {
+	public Medias accessAllMedias() throws IOException {
 		return dashboard.accessAllMedias();
 	}
 	
