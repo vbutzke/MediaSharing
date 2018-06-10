@@ -1,5 +1,6 @@
 package database.dtos;
 
+import java.io.IOException;
 import java.util.HashMap;
 
 import app.entities.AbstractEntity;
@@ -9,7 +10,7 @@ import app.singletons.MediaCollectionType;
 
 public class MediasDTO extends AbstractDTO {
 	
-	private HashMap<Integer, Media> medias;
+	private HashMap<Integer, MediaDTO> medias;
 	private MediaCollectionType type;
 
 	public MediasDTO() {
@@ -24,19 +25,23 @@ public class MediasDTO extends AbstractDTO {
 		this.type = type;
 	}
 	
-	public HashMap<Integer, Media> getMedias() {
+	public HashMap<Integer, MediaDTO> getMedias() {
 		return medias;
 	}
 
-	public void setMedias(HashMap<Integer, Media> medias) {
+	public void setMedias(HashMap<Integer, MediaDTO> medias) {
 		this.medias = medias;
 	}
 	
 	@Override
-	public AbstractEntity toEntity() {
+	public AbstractEntity toEntity() throws IOException {
 		Medias m = new Medias();
 		m.setCollectionType(type);
-		m.setMedias(medias);
+		HashMap<Integer, Media> mediasHashMap = new HashMap<Integer, Media>();
+		for(int i = 1; i<medias.size(); i++) {
+			mediasHashMap.put(i, (Media) medias.get(i).toEntity());
+		}
+		m.setMedias(mediasHashMap);
 		m.setLastKey(medias.size());
 		return m;
 	}

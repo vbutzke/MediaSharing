@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import app.singletons.MediaCollectionType;
 import app.singletons.MediaType;
 import database.DatabaseController;
+import database.DatabaseManagement;
 
 public class Dashboard {
 	
@@ -17,10 +18,10 @@ public class Dashboard {
 	private Medias favorites;
 	private Medias allMedias;
 	private DatabaseController db;
-	private LinkedList<Author> author; //?
+	private LinkedList<Author> author;
 	
-	public Dashboard(String email) throws JsonParseException, JsonMappingException, IOException {
-		this.db 	   = new DatabaseController();
+	public Dashboard(String email, DatabaseManagement dm) throws JsonParseException, JsonMappingException, IOException {
+		this.db 	   = new DatabaseController(dm);
 		this.profile   = new Profile((User) db.getUser(email).toEntity(), db);
 		this.myMedias  = (Medias) db.getMyMedias(email).toEntity();
 		this.favorites = (Medias) db.getFavorites(email).toEntity();
@@ -65,7 +66,7 @@ public class Dashboard {
 		favorites = (Medias) db.getAllMedias().toEntity();
 	}
 		
-	public void addMedia(Media media) throws JsonProcessingException {
+	public void addMedia(Media media) throws IOException {
 		if(author.isEmpty()) {
 			Author a = new Author(profile.getUser(), media);
 			profile.changeToAuthor();
@@ -77,14 +78,14 @@ public class Dashboard {
 		db.updateMyMedias(profile.getUser(), myMedias);
 	}
 	
-	public void removeMedia(int key) throws JsonProcessingException {
+	public void removeMedia(int key) throws IOException {
 		allMedias.removeMedia(key);
 		db.updateAllMedias(allMedias);
 		myMedias.setMedias(allMedias.searchMedia("", "", author, null));
 		db.updateMyMedias(profile.getUser(), myMedias);
 	}
 	
-	public void editMedia(int key, Media media) throws JsonProcessingException {
+	public void editMedia(int key, Media media) throws IOException {
 		allMedias.setMedia(key, media);
 		db.updateAllMedias(allMedias);
 		myMedias.setMedias(allMedias.searchMedia("", "", author, null));

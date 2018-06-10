@@ -1,5 +1,6 @@
 package app.entities;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
 
@@ -7,6 +8,7 @@ import app.singletons.MediaCollectionType;
 import app.singletons.MediaType;
 import app.singletons.SearchEngine;
 import database.dtos.AbstractDTO;
+import database.dtos.MediaDTO;
 import database.dtos.MediasDTO;
 
 public class Medias extends AbstractEntity {
@@ -67,9 +69,14 @@ public class Medias extends AbstractEntity {
 	}
 	
 	@Override
-	public AbstractDTO convertToDTO() {
+	public AbstractDTO convertToDTO() throws IOException {
 		MediasDTO dto = new MediasDTO();
-		dto.setMedias(getMedias());
+		dto.setCollectionType(type);
+		HashMap<Integer, MediaDTO> mediasHashMap = new HashMap<Integer, MediaDTO>();
+		for(int i = 1; i < medias.size(); i++) {
+			mediasHashMap.put(i, (MediaDTO) medias.get(i).convertToDTO());
+		}
+		dto.setMedias(mediasHashMap);
 		return dto;
 	}
 	

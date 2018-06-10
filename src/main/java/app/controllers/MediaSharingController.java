@@ -76,7 +76,7 @@ public class MediaSharingController {
 		return dashboard.accessAllMedias().searchMedia(name, description, authors, type);
 	}
 	
-	public void addMedia(Media media) throws JsonProcessingException {
+	public void addMedia(Media media) throws IOException {
 		dashboard.addMedia(media);
 	}
 	
@@ -100,7 +100,7 @@ public class MediaSharingController {
 		return dashboard.accessAllMedias().getMedia(key);
 	}
 	
-	public void deleteMedia(int key) throws JsonProcessingException {
+	public void deleteMedia(int key) throws IOException {
 		dashboard.removeMedia(key);
 	}
 	
@@ -112,7 +112,7 @@ public class MediaSharingController {
 		dashboard.accessFavorites().removeMedia(key);
 	}
 	
-	public void editMedia(int key, Media media) throws JsonProcessingException {
+	public void editMedia(int key, Media media) throws IOException {
 		dashboard.editMedia(key, media);
 	}
 	

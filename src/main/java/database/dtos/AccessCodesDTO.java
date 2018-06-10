@@ -6,8 +6,8 @@ import app.entities.AbstractEntity;
 
 public class AccessCodesDTO extends AbstractDTO {
 	
-	LinkedList<String> accessCodes;
-	boolean usedCodes;
+	private LinkedList<String> accessCodes;
+	private boolean usedCodes;
 	
 	public int getAccessCodeIndex(String accessCode) {
 		return accessCodes.indexOf(accessCode);

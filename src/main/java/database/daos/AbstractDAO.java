@@ -18,9 +18,9 @@ public abstract class AbstractDAO {
 	protected MongoCollection<Document> dao;
 	private DatabaseManagement dm;
 	
-	public AbstractDAO() {
+	public AbstractDAO(DatabaseManagement dm) {
 		mapper = new ObjectMapper();
-		setDm(new DatabaseManagement());
+		setDm(dm);
 	}
 	
 	public Document createDocument(Object o) throws JsonProcessingException {

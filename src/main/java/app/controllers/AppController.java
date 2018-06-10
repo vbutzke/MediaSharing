@@ -7,6 +7,8 @@ import app.entities.User;
 import app.singletons.Exceptions;
 import app.singletons.MediaType;
 import app.singletons.UserType;
+import database.DatabaseManagement;
+
 import java.io.IOException;
 import java.security.InvalidParameterException;
 import java.util.InputMismatchException;
@@ -24,10 +26,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @RestController
 public class AppController {
 
-	AuthenticationController authenticationController = new AuthenticationController();
-	MediaSharingController mediaSharingController; 
-	boolean isLoggedIn = false;
-	ObjectMapper mapper = new ObjectMapper();
+	private DatabaseManagement databaseManagement = new DatabaseManagement();
+	private AuthenticationController authenticationController = new AuthenticationController(databaseManagement);
+	private MediaSharingController mediaSharingController; 
+	private boolean isLoggedIn = false;
+	private ObjectMapper mapper = new ObjectMapper();
 	
 	@RequestMapping("/createInstitution")
 	public void createInstitution(@RequestParam(value="institution") String institution, HttpServletResponse response) {
@@ -80,6 +83,8 @@ public class AppController {
 	public void login(@RequestParam(value="email") String email, @RequestParam(value="password") String password, HttpServletResponse response) {
 		
 		try {
+			databaseManagement.startDB();
+			authenticationController.getDb().setDm(databaseManagement);
 			mediaSharingController = new MediaSharingController(authenticationController.login(email, password), authenticationController);
 			isLoggedIn = true;
 			response.setStatus( HttpServletResponse.SC_OK );
@@ -439,6 +444,7 @@ public class AppController {
 	@RequestMapping("/logout")
 	public void logout(HttpServletResponse response) {
 		if(isLoggedIn) {
+			databaseManagement.closeConnection();
 			mediaSharingController.logout();
 			mediaSharingController = null;
 			authenticationController = null;

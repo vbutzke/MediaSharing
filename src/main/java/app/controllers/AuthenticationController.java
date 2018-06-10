@@ -19,6 +19,7 @@ import app.entities.User;
 import app.singletons.Email;
 import app.singletons.Exceptions;
 import database.DatabaseController;
+import database.DatabaseManagement;
 import database.dtos.InstitutionDTO;
 
 @Controller
@@ -27,9 +28,9 @@ public class AuthenticationController {
 	private EmailJob emailJob;
 	private DatabaseController db;
 	
-	public AuthenticationController() {
+	public AuthenticationController(DatabaseManagement dm) {
 		emailJob = new EmailJob();
-		db = new DatabaseController();
+		db = new DatabaseController(dm);
 	}
 	
 	public Dashboard login(String email, String password) throws LoginException, JsonParseException, JsonMappingException, IOException {
@@ -38,7 +39,7 @@ public class AuthenticationController {
 		boolean isPasswordValid = false;
 		
 		if(isEmailValid && isPasswordValid) {
-			Dashboard d = new Dashboard(email);
+			Dashboard d = new Dashboard(email, db.getDm());
 			return d;
 			
 		} else if(isEmailValid && !isPasswordValid) {
@@ -86,6 +87,14 @@ public class AuthenticationController {
 		db = null;
 	}
 	
+	public DatabaseController getDb() {
+		return db;
+	}
+
+	public void setDb(DatabaseController db) {
+		this.db = db;
+	}
+
 	private boolean isInformationFilled(String name, String lastName, String email, String password, String confirmation, String accessCode) {
 		if(isInformationFilled(name)  && isInformationFilled(lastName) &&
 		   isInformationFilled(email) && isInformationFilled(password) &&
