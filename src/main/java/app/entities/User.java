@@ -3,8 +3,10 @@ package app.entities;
 import java.util.HashMap;
 
 import app.singletons.UserType;
+import database.dtos.AbstractDTO;
+import database.dtos.UserDTO;
 
-public class User {
+public class User extends AbstractEntity {
 
 	private String name;
 	private HashMap<Integer, String> email;
@@ -88,6 +90,11 @@ public class User {
 
 	public void setUserType(UserType userType) {
 		this.userType = userType;
+	}
+	
+	@Override
+	public AbstractDTO convertToDTO() {
+		return new UserDTO(name, email, name, institution);
 	}
 	
 }

@@ -7,6 +7,8 @@ import app.entities.User;
 import app.singletons.Exceptions;
 import app.singletons.MediaType;
 import app.singletons.UserType;
+import database.DatabaseManagement;
+
 import java.io.IOException;
 import java.security.InvalidParameterException;
 import java.util.InputMismatchException;
@@ -17,16 +19,18 @@ import javax.security.auth.login.LoginException;
 import javax.servlet.http.HttpServletResponse;
 import org.springframework.web.bind.annotation.*;
 import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @RestController
 public class AppController {
 
-	AuthenticationController authenticationController = new AuthenticationController();
-	MediaSharingController mediaSharingController; 
-	boolean isLoggedIn = false;
-	ObjectMapper mapper = new ObjectMapper();
+	private DatabaseManagement databaseManagement = new DatabaseManagement();
+	private AuthenticationController authenticationController = new AuthenticationController(databaseManagement);
+	private MediaSharingController mediaSharingController; 
+	private boolean isLoggedIn = false;
+	private ObjectMapper mapper = new ObjectMapper();
 	
 	@RequestMapping("/createInstitution")
 	public void createInstitution(@RequestParam(value="institution") String institution, HttpServletResponse response) {
@@ -79,10 +83,18 @@ public class AppController {
 	public void login(@RequestParam(value="email") String email, @RequestParam(value="password") String password, HttpServletResponse response) {
 		
 		try {
+			databaseManagement.startDB();
+			authenticationController.getDb().setDm(databaseManagement);
 			mediaSharingController = new MediaSharingController(authenticationController.login(email, password), authenticationController);
 			isLoggedIn = true;
 			response.setStatus( HttpServletResponse.SC_OK );
 		} catch(LoginException e) {
+			response = sendError(response, HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
+		} catch (JsonParseException e) {
+			response = sendError(response, HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
+		} catch (JsonMappingException e) {
+			response = sendError(response, HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
+		} catch (IOException e) {
 			response = sendError(response, HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
 		}
 		
@@ -95,6 +107,14 @@ public class AppController {
 			response.setStatus( HttpServletResponse.SC_CREATED );
 		} catch(InvalidParameterException e) {
 			response = sendError(response, HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
+		} catch (JsonParseException e) {
+			response = sendError(response, HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
+		} catch (JsonMappingException e) {
+			response = sendError(response, HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
+		} catch (JsonProcessingException e) {
+			response = sendError(response, HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
+		} catch (IOException e) {
+			response = sendError(response, HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
 		}
 	}
 	
@@ -123,6 +143,8 @@ public class AppController {
 				response = sendError(response, HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
 			} catch(MessagingException m) {
 				response = sendError(response, HttpServletResponse.SC_BAD_REQUEST, Exceptions.EMAIL_SERVICE_ERROR+"\n "+m.getMessage());
+			} catch (JsonProcessingException e) {
+				response = sendError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
 			}
 			
 		} else {
@@ -137,6 +159,8 @@ public class AppController {
 				mediaSharingController.addEmail(email);
 			} catch (MessagingException e) {
 				response = sendError(response, HttpServletResponse.SC_BAD_REQUEST, Exceptions.EMAIL_SERVICE_ERROR+"\n "+e.getMessage());
+			} catch (JsonProcessingException e) {
+				response = sendError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
 			}
 			response.setStatus( HttpServletResponse.SC_OK  );
 		} else {
@@ -147,7 +171,11 @@ public class AppController {
 	@RequestMapping("/removeEmail") //
 	public void removeEmail(@RequestParam(value="emailId") int id, HttpServletResponse response) {
 		if(isLoggedIn) {
-			mediaSharingController.removeEmail(id);
+			try {
+				mediaSharingController.removeEmail(id);
+			} catch (JsonProcessingException e) {
+				response = sendError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+			}
 			response.setStatus( HttpServletResponse.SC_OK  );
 		} else {
 			response.setStatus( HttpServletResponse.SC_UNAUTHORIZED );
@@ -172,6 +200,8 @@ public class AppController {
 				return mediaSharingController.generateAccessCode();
 			} catch(SecurityException e) {
 				response = sendError(response, HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
+			} catch (IOException e) {
+				response = sendError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
 			}
 			response.setStatus( HttpServletResponse.SC_OK  );
 		} else {
@@ -228,7 +258,12 @@ public class AppController {
 	
 	@RequestMapping("/searchAll")
 	public String searchAll(@RequestParam("name") String name, @RequestParam("description") String description, @RequestParam("authors") LinkedList<Author> authors, @RequestParam("mediaType") MediaType mediaType, HttpServletResponse response) {
-		return getJSON(mediaSharingController.searchInAllMedias(name, description, authors, mediaType), response);
+		try {
+			return getJSON(mediaSharingController.searchInAllMedias(name, description, authors, mediaType), response);
+		} catch (IOException e) {
+			response = sendError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+		}
+		return "";
 	}
 	
 	@RequestMapping("/addMedia")
@@ -260,27 +295,58 @@ public class AppController {
 	
 	@RequestMapping("/myMedias")
 	public String accessMyMedias(HttpServletResponse response) {
-		return getJSON(mediaSharingController.accessMyMedia(), response);
+		try {
+			return getJSON(mediaSharingController.accessMyMedia(), response);
+		} catch (IOException e) {
+			response = sendError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+		}
+		
+		return "";
 	}
 	
 	@RequestMapping("/searchMyMedias")
 	public String searchMyMedias(@RequestParam("name") String name, @RequestParam("description") String description, @RequestParam("authors") LinkedList<Author> authors, @RequestParam("mediaType") MediaType mediaType, HttpServletResponse response) {
-		return getJSON(mediaSharingController.searchOnMyMedias(name, description, authors, mediaType), response);
+		try {
+			return getJSON(mediaSharingController.searchOnMyMedias(name, description, authors, mediaType), response);
+		} catch (IOException e) {
+			response = sendError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+		}
+		return "";
 	}
 	
 	@RequestMapping("/favorites")
 	public String accessFavorites(HttpServletResponse response) {
-		return getJSON(mediaSharingController.accessFavorites(), response);
+		try {
+			return getJSON(mediaSharingController.accessFavorites(), response);
+		} catch (JsonProcessingException e) {
+			response = sendError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+		} catch (IOException e) {
+			response = sendError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+		}
+		return "";
 	}
 	
 	@RequestMapping("/searchFavorites")
 	public String searchFavorites(@RequestParam("name") String name, @RequestParam("description") String description, @RequestParam("authors") LinkedList<Author> authors, @RequestParam("mediaType") MediaType mediaType, HttpServletResponse response) {
-		return getJSON(mediaSharingController.searchOnFavorites(name, description, authors, mediaType), response);
+		try {
+			return getJSON(mediaSharingController.searchOnFavorites(name, description, authors, mediaType), response);
+		} catch (JsonProcessingException e) {
+			response = sendError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+		} catch (IOException e) {
+			response = sendError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+		}
+		
+		return "";
 	}
 	
 	@RequestMapping("/getMediaInfo")
 	public String clickOnMedia(@RequestParam(value="mediaId") int id, HttpServletResponse response) {
-		return getJSON(mediaSharingController.clickOnMedia(id), response);
+		try {
+			return getJSON(mediaSharingController.clickOnMedia(id), response);
+		} catch (IOException e) {
+			response = sendError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+		}
+		return "";
 	}
 	
 	@RequestMapping("/deleteMedia")
@@ -289,11 +355,19 @@ public class AppController {
 		if(isLoggedIn) {
 			User user = mediaSharingController.accessProfile().getUser();
 
-			if(user.getUserType().equals(UserType.ADMINISTRATOR) || mediaSharingController.accessAllMedias().getMedia(id).getAuthors().contains(user)){
-				mediaSharingController.accessAllMedias().removeMedia(id);
-				response.setStatus( HttpServletResponse.SC_OK );
-			} else {
-				response = sendError(response, HttpServletResponse.SC_UNAUTHORIZED, Exceptions.PERMISSION_DENIED.getMessage());
+			try {
+				if(user.getUserType().equals(UserType.ADMINISTRATOR) || mediaSharingController.accessAllMedias().getMedia(id).getAuthors().contains(user)){
+					try {
+						mediaSharingController.accessAllMedias().removeMedia(id);
+					} catch (IOException e) {
+						response = sendError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+					}
+					response.setStatus( HttpServletResponse.SC_OK );
+				} else {
+					response = sendError(response, HttpServletResponse.SC_UNAUTHORIZED, Exceptions.PERMISSION_DENIED.getMessage());
+				}
+			} catch (IOException e) {
+				response = sendError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
 			}
 		} else {
 			response.setStatus( HttpServletResponse.SC_UNAUTHORIZED );
@@ -304,62 +378,74 @@ public class AppController {
 	@RequestMapping("/addToFavorites")
 	public void addToFavorites(@RequestParam(value="mediaId") int id, HttpServletResponse response) {
 		if(isLoggedIn) {
-			mediaSharingController.accessFavorites().addMedia(mediaSharingController.accessAllMedias().getMedia(id));
+			try {
+				mediaSharingController.accessFavorites().addMedia(mediaSharingController.accessAllMedias().getMedia(id));
+			} catch (IOException e) {
+				response = sendError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+			}
 			response.setStatus( HttpServletResponse.SC_OK );
 		} else {
 			response.setStatus( HttpServletResponse.SC_UNAUTHORIZED );
 		}
 	}
-	
-	
+		
 	@RequestMapping("/removeFromFavorites")
 	public void removeFromFavorites(@RequestParam(value="mediaId") int id, HttpServletResponse response) {
 		if(isLoggedIn) {
-			mediaSharingController.accessFavorites().removeMedia(id);
+			try {
+				mediaSharingController.accessFavorites().removeMedia(id);
+			} catch (JsonProcessingException e) {
+				response = sendError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+			} catch (IOException e) {
+				response = sendError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+			}
 			response.setStatus( HttpServletResponse.SC_OK );
 		} else {
 			response.setStatus( HttpServletResponse.SC_UNAUTHORIZED );
 		}
 	}
-	
-	
+		
 	@RequestMapping("/editMedia")
 	public void editMedia(@RequestParam(value="mediaId") int id, @RequestParam(value="newMedia") String newMedia, HttpServletResponse response) {
 		
 		if(isLoggedIn) {
 			User user = mediaSharingController.accessProfile().getUser();
 
-			if(user.getUserType().equals(UserType.ADMINISTRATOR) || mediaSharingController.accessAllMedias().getMedia(id).getAuthors().contains(user)){
-				try {
-					Media mediaObj = mapper.readValue(newMedia, Media.class);
-					mediaSharingController.editMedia(id, mediaObj);
-					response.setStatus( HttpServletResponse.SC_OK );
-				} catch (JsonParseException e) {
-					e.printStackTrace();
-					response.setStatus( HttpServletResponse.SC_INTERNAL_SERVER_ERROR  );
-					System.out.println("Error parsing JSON - accessProfile");
-				} catch (JsonMappingException e) {
-					e.printStackTrace();
-					response.setStatus( HttpServletResponse.SC_INTERNAL_SERVER_ERROR  );
-					System.out.println("Error mapping JSON - accessProfile");
-				} catch (IOException e) {
-					e.printStackTrace();
-					response.setStatus( HttpServletResponse.SC_INTERNAL_SERVER_ERROR  );
-					System.out.println("Error - accessProfile");
+			try {
+				if(user.getUserType().equals(UserType.ADMINISTRATOR) || mediaSharingController.accessAllMedias().getMedia(id).getAuthors().contains(user)){
+					try {
+						Media mediaObj = mapper.readValue(newMedia, Media.class);
+						mediaSharingController.editMedia(id, mediaObj);
+						response.setStatus( HttpServletResponse.SC_OK );
+					} catch (JsonParseException e) {
+						e.printStackTrace();
+						response.setStatus( HttpServletResponse.SC_INTERNAL_SERVER_ERROR  );
+						System.out.println("Error parsing JSON - accessProfile");
+					} catch (JsonMappingException e) {
+						e.printStackTrace();
+						response.setStatus( HttpServletResponse.SC_INTERNAL_SERVER_ERROR  );
+						System.out.println("Error mapping JSON - accessProfile");
+					} catch (IOException e) {
+						e.printStackTrace();
+						response.setStatus( HttpServletResponse.SC_INTERNAL_SERVER_ERROR  );
+						System.out.println("Error - accessProfile");
+					}
+				} else {
+					response = sendError(response, HttpServletResponse.SC_UNAUTHORIZED, Exceptions.PERMISSION_DENIED.getMessage());
 				}
-			} else {
-				response = sendError(response, HttpServletResponse.SC_UNAUTHORIZED, Exceptions.PERMISSION_DENIED.getMessage());
+			} catch (IOException e) {
+				response = sendError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
 			}
 		} else {
 			response.setStatus( HttpServletResponse.SC_UNAUTHORIZED );
 		}
 	}
-	
-	
+		
 	@RequestMapping("/logout")
 	public void logout(HttpServletResponse response) {
 		if(isLoggedIn) {
-			authenticationController.logout();
+			databaseManagement.closeConnection();
+			mediaSharingController.logout();
 			mediaSharingController = null;
 			authenticationController = null;
 			isLoggedIn = false;

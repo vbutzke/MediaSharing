@@ -5,7 +5,7 @@ import java.util.Random;
 public class RandomGenerator {
 
 	private Random randomGen;
-	char[] letters = {'A', 'B', 'C', 'D', 'E', 'F', 'G',  'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'};
+	private char[] letters = {'A', 'B', 'C', 'D', 'E', 'F', 'G',  'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'};
 	
 	public RandomGenerator() {
 		this.randomGen = new Random();

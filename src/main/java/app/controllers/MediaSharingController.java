@@ -1,23 +1,14 @@
 package app.controllers;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.InputMismatchException;
 import java.util.LinkedList;
 import javax.mail.MessagingException;
 import org.springframework.stereotype.Controller;
-import app.entities.Administrator;
-import app.entities.AllMedias;
-import app.entities.Author;
-import app.entities.Dashboard;
-import app.entities.Favorites;
-import app.entities.Institution;
-import app.entities.Media;
-import app.entities.MyMedias;
-import app.entities.Profile;
-import app.entities.User;
-import app.singletons.Exceptions;
-import app.singletons.MediaType;
-import app.singletons.UserType;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import app.entities.*;
+import app.singletons.*;
 
 @Controller
 public class MediaSharingController {
@@ -27,22 +18,22 @@ public class MediaSharingController {
 	
 	public MediaSharingController(Dashboard dashboard, AuthenticationController auth) {
 		this.dashboard = dashboard;
-		this.auth = auth;
+		this.auth 	   = auth;
 	}
 	
 	public Profile accessProfile() {
 		return dashboard.accessProfile();
 	}
 	
-	public void changePassword(String newPassword, String confirmation) throws InputMismatchException, MessagingException {
+	public void changePassword(String newPassword, String confirmation) throws InputMismatchException, MessagingException, JsonProcessingException {
 		dashboard.accessProfile().changePassword(newPassword, confirmation);
 	}
 	
-	public void addEmail(String email) throws MessagingException {
+	public void addEmail(String email) throws MessagingException, JsonProcessingException {
 		dashboard.accessProfile().addEmail(email);
 	}
 	
-	public void removeEmail(int key) {
+	public void removeEmail(int key) throws JsonProcessingException {
 		dashboard.accessProfile().removeEmail(key);
 	}
 	
@@ -50,13 +41,14 @@ public class MediaSharingController {
 		dashboard.accessProfile().removeAccount();
 	}
 	
-	public String generateAccessCode() throws SecurityException {
+	public String generateAccessCode() throws SecurityException, IOException {
 		User user = dashboard.accessProfile().getUser();
 		String accessCode = "";
 		
 		if(user.getUserType() == UserType.ADMINISTRATOR) {
 			Administrator admin = (Administrator)user;
 			accessCode = admin.generateAccessCode();
+			dashboard.addAccessCode(accessCode);
 		} else {
 			throw new SecurityException(Exceptions.ACCESS_CODE_TRIGGERING_VIOLATION.getMessage());
 		}
@@ -80,55 +72,55 @@ public class MediaSharingController {
 		return dashboard;
 	}
 	
-	public HashMap<Integer, Media> searchInAllMedias(String name, String description, LinkedList<Author> authors, MediaType type) {
+	public HashMap<Integer, Media> searchInAllMedias(String name, String description, LinkedList<Author> authors, MediaType type) throws IOException {
 		return dashboard.accessAllMedias().searchMedia(name, description, authors, type);
 	}
 	
-	public void addMedia(Media media) {
+	public void addMedia(Media media) throws IOException {
 		dashboard.addMedia(media);
 	}
 	
-	public MyMedias accessMyMedia() {
+	public Medias accessMyMedia() throws IOException {
 		return dashboard.accessMyMedias();
 	}
 	
-	public HashMap<Integer, Media> searchOnMyMedias(String name, String description, LinkedList<Author> authors, MediaType type) {
+	public HashMap<Integer, Media> searchOnMyMedias(String name, String description, LinkedList<Author> authors, MediaType type) throws IOException {
 		return dashboard.accessMyMedias().searchMedia(name, description, authors, type);
 	}
 	
-	public Favorites accessFavorites() {
+	public Medias accessFavorites() throws IOException {
 		return dashboard.accessFavorites();
 	}
 	
-	public HashMap<Integer, Media> searchOnFavorites(String name, String description, LinkedList<Author> authors, MediaType type) {
+	public HashMap<Integer, Media> searchOnFavorites(String name, String description, LinkedList<Author> authors, MediaType type) throws IOException {
 		 return dashboard.accessFavorites().searchMedia(name, description, authors, type);
 	}
 	
-	public Media clickOnMedia(int key) {
+	public Media clickOnMedia(int key) throws IOException {
 		return dashboard.accessAllMedias().getMedia(key);
 	}
 	
-	public void deleteMedia(int key) {
+	public void deleteMedia(int key) throws IOException {
 		dashboard.removeMedia(key);
 	}
 	
-	public void addToFavorites(Media media) {
+	public void addToFavorites(Media media) throws IOException {
 		dashboard.accessFavorites().addMedia(media);
 	}
 	
-	public void removeFromFavorites(int key) {
+	public void removeFromFavorites(int key) throws IOException {
 		dashboard.accessFavorites().removeMedia(key);
 	}
 	
-	public void editMedia(int key, Media media) {
+	public void editMedia(int key, Media media) throws IOException {
 		dashboard.editMedia(key, media);
 	}
 	
-	public AllMedias accessAllMedias() {
+	public Medias accessAllMedias() throws IOException {
 		return dashboard.accessAllMedias();
 	}
 	
-	public void createInstitution(Institution institution) {
+	public void createInstitution(Institution institution) throws JsonProcessingException {
 		dashboard.addInstitution(institution);
 	}
 	
@@ -137,7 +129,9 @@ public class MediaSharingController {
 	}
 	
 	public void logout() {
+		dashboard = null;
 		auth.logout();
+		auth = null;
 	}
 	
 }

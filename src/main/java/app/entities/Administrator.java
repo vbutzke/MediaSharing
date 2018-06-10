@@ -4,7 +4,7 @@ import app.RandomGenerator;
 import app.singletons.UserType;
 
 public class Administrator extends Academic {
-
+	
 	public Administrator(User user) {
 		super(user);
 		super.setUserType(UserType.ADMINISTRATOR);

@@ -1,26 +1,34 @@
 package app.entities;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import app.singletons.MediaCollectionType;
 import app.singletons.MediaType;
-import database.DatabaseBoundary;
+import database.DatabaseController;
+import database.DatabaseManagement;
 
 public class Dashboard {
-
+	
 	private Profile profile;
-	private MyMedias myMedias;
-	private Favorites favorites;
-	private AllMedias allMedias;
-	private DatabaseBoundary db;
+	private Medias myMedias;
+	private Medias favorites;
+	private Medias allMedias;
+	private DatabaseController db;
 	private LinkedList<Author> author;
 	
-	public Dashboard(String email) {
-		this.db 	   = new DatabaseBoundary();
-		this.profile   = new Profile(db.getUser(email), db);
-		this.myMedias  = db.getMyMedias(email);
-		this.favorites = db.getFavorites(email);
-		this.allMedias = db.getAllMedias();	
-		this.author.add((Author)profile.getUser());
+	public Dashboard(String email, DatabaseManagement dm) throws JsonParseException, JsonMappingException, IOException {
+		this.db 	   = new DatabaseController(dm);
+		this.profile   = new Profile((User) db.getUser(email).toEntity(), db);
+		this.myMedias  = (Medias) db.getMyMedias(email).toEntity();
+		this.favorites = (Medias) db.getFavorites(email).toEntity();
+		this.allMedias = (Medias) db.getAllMedias().toEntity();
+		this.myMedias.setCollectionType(MediaCollectionType.MY_MIDIAS);
+		this.favorites.setCollectionType(MediaCollectionType.FAVORITES);
+		this.allMedias.setCollectionType(MediaCollectionType.ALL_MEDIAS);
 	}
 	
 	public HashMap<Integer, Media> searchMedia(String name, String description, LinkedList<Author> authors, MediaType mediaType) {
@@ -31,45 +39,69 @@ public class Dashboard {
 		return profile;
 	}
 	
-	public MyMedias accessMyMedias() {
-		myMedias.setMedias(allMedias.searchMedia("", "", author, null));
+	public Medias accessMyMedias() throws IOException {
+		updateMyMedias();
 		return myMedias;
 	}
 	
-	public Favorites accessFavorites() {
-		updateFavorites(favorites);
+	public Medias accessFavorites() throws IOException {
+		updateFavorites();
 		return favorites;
 	}
 	
-	private void updateFavorites(Favorites favorites) {
-		favorites = db.updateFavorites(favorites);
-	}
-	
-	public AllMedias accessAllMedias() {
+	public Medias accessAllMedias() throws IOException {
+		updateMedias();
 		return allMedias;
 	}
 	
-	public void addMedia(Media media) {
+	private void updateFavorites() throws IOException {
+		favorites = (Medias) db.getFavorites(profile.getUser().getEmail().get(1)).toEntity();
+	}
+	
+	private void updateMyMedias() throws IOException {
+		favorites = (Medias) db.getMyMedias(profile.getUser().getEmail().get(1)).toEntity();
+	}
+	
+	private void updateMedias() throws IOException {
+		favorites = (Medias) db.getAllMedias().toEntity();
+	}
+		
+	public void addMedia(Media media) throws IOException {
+		if(author.isEmpty()) {
+			Author a = new Author(profile.getUser(), media);
+			profile.changeToAuthor();
+			author.add(a);
+		}
 		allMedias.addMedia(media);
+		db.updateAllMedias(allMedias);
 		myMedias.setMedias(allMedias.searchMedia("", "", author, null));
+		db.updateMyMedias(profile.getUser(), myMedias);
 	}
 	
-	public void removeMedia(int key) {
+	public void removeMedia(int key) throws IOException {
 		allMedias.removeMedia(key);
+		db.updateAllMedias(allMedias);
 		myMedias.setMedias(allMedias.searchMedia("", "", author, null));
+		db.updateMyMedias(profile.getUser(), myMedias);
 	}
 	
-	public void editMedia(int key, Media media) {
+	public void editMedia(int key, Media media) throws IOException {
 		allMedias.setMedia(key, media);
+		db.updateAllMedias(allMedias);
 		myMedias.setMedias(allMedias.searchMedia("", "", author, null));
+		db.updateMyMedias(profile.getUser(), myMedias);
 	}
 	
-	public void addInstitution(Institution institution) {
+	public void addInstitution(Institution institution) throws JsonProcessingException {
 		db.addInstitution(institution);
 	}
 	
 	public void deleteInstitution(int id) {
 		db.deleteInstitution(id);
+	}
+	
+	public void addAccessCode(String code) throws IOException {
+		db.addAccessCode(code);
 	}
 	
 }
